@@ -88,7 +88,11 @@ class Search {
 
   static _hitTest(i, documentName, title, term, hits) {
     let name = i.name?.toLowerCase();
-    if (term.every((t) => name?.includes(t))) {
+
+    // If babele translation enabled and has original name
+    let originalName = i.flags?.babele?.originalName?.toLowerCase();
+
+    if (term.every((t) => name?.includes(t)) || term.every((t) => originalName?.includes(t))) {
       let typeLabel = documentName;
       if (documentName === 'Item' || documentName === 'Actor') {
         typeLabel = game.i18n.localize(CONFIG[documentName].typeLabels[i.type] ?? CONFIG[documentName].typeLabels.base);
@@ -96,6 +100,7 @@ class Search {
 
       hits.push({
         name: i.name,
+        originalName: i.originalName,
         details: typeLabel + ' - ' + title,
         thumbnail: i.img ?? i.thumb ?? getDocumentClass(documentName).DEFAULT_ICON ?? BACKUP_ICONS[documentName],
         uuid: i.uuid,

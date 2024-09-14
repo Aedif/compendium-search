@@ -1,3 +1,9 @@
+# 1.2.0
+
+- New Feature:
+  - Now module is compatible with [**Babele**](https://foundryvtt.com/packages/babele) translation module
+  - Allow searching by real and translated names
+
 # 1.1.1
 
 - Fixed Journals not being searchable when **Search world documents** is enabled
