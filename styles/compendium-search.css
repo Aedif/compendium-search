@@ -26,6 +26,14 @@
     line-height: normal;
 }
 
+.document-hits .hit .folderName {
+    color: var(--color-text-hyperlink);
+}
+
+.document-hits .hit .fas {
+    font-size: smaller;
+}
+
 .document-hits .hit .details {
     line-height: normal;
     color: var(--color-light-3);

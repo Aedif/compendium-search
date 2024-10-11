@@ -1,8 +1,10 @@
 # 1.2.0
 
-- New Feature:
-  - Now module is compatible with [**Babele**](https://foundryvtt.com/packages/babele) translation module
+- Compatibility with [**Babele**](https://foundryvtt.com/packages/babele) translation module
   - Allow searching by real and translated names
+  - Courtesy of **Qwerty Han**
+- Search by folder
+  - Folder names will now be included in searches and in case of a match displayed next to the item name
 
 # 1.1.1
 

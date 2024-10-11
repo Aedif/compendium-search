@@ -72,7 +72,8 @@ class Search {
       wPacks.forEach((p) => {
         const documentName = p.documentName;
         const title = `${game.i18n.localize(p.title)} (${game.i18n.localize('PACKAGE.Type.world')})`;
-        game[p.pack].forEach((i) => this._hitTest(i, documentName, title, term, hits));
+        const pack = game[p.pack];
+        pack.forEach((i) => this._hitTest(i, documentName, title, term, hits, pack));
       });
     }
 
@@ -80,19 +81,27 @@ class Search {
     packs.forEach((p) => {
       const title = p.title;
       const documentName = p.documentName;
-      p.index.forEach((i) => this._hitTest(i, documentName, title, term, hits));
+      p.index.forEach((i) => this._hitTest(i, documentName, title, term, hits, p));
     });
+
+    hits.sort((h1, h2) => (!h1.folderHit && h2.folderHit ? -1 : 0));
 
     this.renderHits(hits);
   }
 
-  static _hitTest(i, documentName, title, term, hits) {
+  static _hitTest(i, documentName, title, term, hits, pack) {
     let name = i.name?.toLowerCase();
-
-    // If babele translation enabled and has original name
+    // If Babele translation enabled and has original name
     let originalName = i.flags?.babele?.originalName?.toLowerCase();
 
-    if (term.every((t) => name?.includes(t)) || term.every((t) => originalName?.includes(t))) {
+    const nameHit = term.every((t) => name?.includes(t) || originalName?.includes(t));
+    let folderHit = false;
+    if (!nameHit && i.folder) {
+      const folderName = (i.folder?.name ?? pack.folders.get(i.folder)?.name)?.toLowerCase();
+      folderHit = term.every((t) => folderName?.includes(t));
+    }
+
+    if (nameHit || folderHit) {
       let typeLabel = documentName;
       if (documentName === 'Item' || documentName === 'Actor') {
         typeLabel = game.i18n.localize(CONFIG[documentName].typeLabels[i.type] ?? CONFIG[documentName].typeLabels.base);
@@ -100,6 +109,7 @@ class Search {
 
       hits.push({
         name: i.name,
+        folder: folderHit ? i.folder.name ?? pack.folders.get(i.folder).name : null,
         originalName: i.originalName,
         details: typeLabel + ' - ' + title,
         thumbnail: i.img ?? i.thumb ?? getDocumentClass(documentName).DEFAULT_ICON ?? BACKUP_ICONS[documentName],
@@ -107,6 +117,7 @@ class Search {
         id: i.id,
         selector: documentName === 'Actor' ? 'actor' : 'other',
         documentName,
+        folderHit,
       });
     }
   }

@@ -1,7 +1,7 @@
 <li class="hit flexrow {{selector}} directory-item" data-uuid="{{uuid}}" {{#if id}}data-entry-id="{{id}}" data-document-id="{{id}}" data-document-name="{{documentName}}"{{/if}}>
-    <img class="thumbnail" title="{{name}}" src="{{thumbnail}}"/>
+    <img class="thumbnail" title="{{name}}" src="{{thumbnail}}" loading="lazy"/>
     <div class="description">
-        <a class="name">{{name}}</a>
+        <a class="name">{{name}} {{#if folder}}<span class="folderName">[<i class="fas fa-folder"></i> {{folder}}]</span>{{/if}}</a>
         {{#if originalName}}<span class="original-name">{{originalName}}{{/if}}</span>
         <span class="details">{{details}}</span>
     </div>
