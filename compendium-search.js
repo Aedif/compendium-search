@@ -52,6 +52,11 @@ class Search {
       .filter((t) => t.length > 2);
     if (!term.length) return;
 
+    const packTerms = term.filter((t) => t.startsWith('@')).map((t) => t.substring(1));
+    term = term.filter((f) => !f.startsWith('@'));
+
+    if (!term.length) return;
+
     // Filter hidden packs and Mass Edit preset packs
     let packs = game.packs.filter((p) => p.visible && !p.index.get('MassEditMetaData'));
 
@@ -61,12 +66,22 @@ class Search {
       packs = packs.filter((p) => filters.includes(p.documentName));
     }
 
+    if (packTerms.length) {
+      packs = packs.filter((p) => packTerms.every((t) => p.metadata.label.toLowerCase().includes(t)));
+    }
+
     // Search World Packs
     if (this.searchWorldPacks) {
       let wPacks = SEARCHABLE_WORLD_PACKS;
 
       if (filters?.length) {
         wPacks = wPacks.filter((p) => filters.includes(p.documentName));
+      }
+
+      if (packTerms.length) {
+        wPacks = wPacks.filter((p) =>
+          packTerms.every((t) => 'world'.includes(t) || game.i18n.localize(p.title).toLowerCase().includes(t))
+        );
       }
 
       wPacks.forEach((p) => {
@@ -95,6 +110,7 @@ class Search {
     let originalName = i.flags?.babele?.originalName?.toLowerCase();
 
     const nameHit = term.every((t) => name?.includes(t) || originalName?.includes(t));
+
     let folderHit = false;
     if (!nameHit && i.folder) {
       const folderName = (i.folder?.name ?? pack.folders.get(i.folder)?.name)?.toLowerCase();

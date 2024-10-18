@@ -1,3 +1,8 @@
+# 1.3.0
+
+- Searches can now be refined to within a speific compendium using `@compendium_name`
+  - e.g. `health @srd`, `shield @spells`
+
 # 1.2.0
 
 - Compatibility with [**Babele**](https://foundryvtt.com/packages/babele) translation module
