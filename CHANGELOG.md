@@ -1,3 +1,7 @@
+# 1.4.0
+
+- Added context menu options for compendiums to include/exclude them from searches
+
 # 1.3.0
 
 - Searches can now be refined to within a speific compendium using `@compendium_name`

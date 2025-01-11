@@ -15,9 +15,11 @@ const SEARCHABLE_WORLD_PACKS = [
 ];
 
 class Search {
+  static excludedPacks = {};
+
   static async init(html) {
     await getTemplate(`modules/${MODULE_ID}/templates/document-hits.html`);
-    await getTemplate(`modules/${MODULE_ID}/templates/document-partial.html`);
+    await getTemplate(`modules/${MODULE_ID}/templates/document-hit.html`);
 
     // Create a container for search results
     this.documentSearch = $('<ol class="document-hits"></ol>');
@@ -58,7 +60,9 @@ class Search {
     if (!term.length) return;
 
     // Filter hidden packs and Mass Edit preset packs
-    let packs = game.packs.filter((p) => p.visible && !p.index.get('MassEditMetaData'));
+    let packs = game.packs.filter(
+      (p) => p.visible && !p.index.get('MassEditMetaData') && !Search.excludedPacks[p.collection]
+    );
 
     // Apply document type filters
     const filters = ui.compendium.activeFilters;
@@ -233,4 +237,38 @@ Hooks.on('init', () => {
     onChange: (val) => (Search.searchWorldPacks = val),
   });
   Search.searchWorldPacks = game.settings.get(MODULE_ID, 'searchWorldPacks');
+
+  game.settings.register(MODULE_ID, 'excludedPacks', {
+    scope: 'world',
+    config: false,
+    type: Object,
+    default: {},
+    onChange: (val) => (Search.excludedPacks = val),
+  });
+  Search.excludedPacks = game.settings.get(MODULE_ID, 'excludedPacks');
+});
+
+Hooks.on('getCompendiumDirectoryEntryContext', (directory, menuOptions) => {
+  menuOptions.push(
+    {
+      name: 'aedifs-compendium-search.settings.excludedPacks.Exclude',
+      icon: '<i class="fas fa-solid fa-magnifying-glass-minus"></i>',
+      condition: (item) => !Search.excludedPacks[$(item).data('pack')],
+      callback: (item) => {
+        const excludedPacks = game.settings.get(MODULE_ID, 'excludedPacks');
+        excludedPacks[$(item).data('pack')] = true;
+        game.settings.set(MODULE_ID, 'excludedPacks', excludedPacks);
+      },
+    },
+    {
+      name: 'aedifs-compendium-search.settings.excludedPacks.Include',
+      icon: '<i class="fas fa-solid fa-magnifying-glass-plus"></i>',
+      condition: (item) => Boolean(Search.excludedPacks[$(item).data('pack')]),
+      callback: (item) => {
+        const excludedPacks = game.settings.get(MODULE_ID, 'excludedPacks');
+        delete excludedPacks[$(item).data('pack')];
+        game.settings.set(MODULE_ID, 'excludedPacks', excludedPacks);
+      },
+    }
+  );
 });
