@@ -1,0 +1,6 @@
+{
+    "aedifs-compendium-search.settings.searchWorldPacks.Name" : "Przeszukiwanie dokumentów świata",
+    "aedifs-compendium-search.settings.searchWorldPacks.Hint" : "Uwzględnij dokumenty utworzone lub zaimportowane do świata.",
+    "aedifs-compendium-search.settings.excludedPacks.Include" : "Uwzględnij kompendium w wyszukiwaniach",
+    "aedifs-compendium-search.settings.excludedPacks.Exclude" : "Wyklucz kompendium z wyszukiwania"
+}
