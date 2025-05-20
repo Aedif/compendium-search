@@ -1,3 +1,8 @@
+# 2.0.0
+
+- v13 support
+- Added context menu options to compendium search results
+
 # 1.4.0
 
 - Added context menu options for compendiums to include/exclude them from searches

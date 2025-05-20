@@ -18,8 +18,8 @@ class Search {
   static excludedPacks = {};
 
   static async init(html) {
-    await getTemplate(`modules/${MODULE_ID}/templates/document-hits.html`);
-    await getTemplate(`modules/${MODULE_ID}/templates/document-hit.html`);
+    await foundry.applications.handlebars.getTemplate(`modules/${MODULE_ID}/templates/document-hits.hbs`);
+    await foundry.applications.handlebars.getTemplate(`modules/${MODULE_ID}/templates/document-hit.hbs`);
 
     // Create a container for search results
     this.documentSearch = $('<ol class="document-hits"></ol>');
@@ -28,7 +28,7 @@ class Search {
 
     // Listen for input within the Search Bar and perform our own search
     html
-      .find('.header-search > input[type="search"]')
+      .find('search > input[type="search"]')
       .on('input', async (event) => this.search(event.currentTarget.value))
       .trigger('input');
 
@@ -138,12 +138,16 @@ class Search {
         selector: documentName === 'Actor' ? 'actor' : 'other',
         documentName,
         folderHit,
+        pack: pack.collection,
       });
     }
   }
 
   static async renderHits(hits) {
-    const render = await renderTemplate(`modules/${MODULE_ID}/templates/document-hits.html`, { hits });
+    const render = await foundry.applications.handlebars.renderTemplate(
+      `modules/${MODULE_ID}/templates/document-hits.hbs`,
+      { hits }
+    );
     this.documentSearch.html(render);
     this._createDragDropHandlers();
   }
@@ -178,7 +182,7 @@ class Search {
 
   static _createDragDropHandlers() {
     // Drag Drop for Actors
-    const ddActors = new DragDrop({
+    const ddActors = new foundry.applications.ux.DragDrop.implementation({
       dragSelector: '.hit.actor',
       permissions: {
         dragstart: () => game.user.can('TOKEN_CREATE'),
@@ -190,7 +194,7 @@ class Search {
     });
     ddActors.bind(this.documentSearch[0]);
 
-    const ddOther = new DragDrop({
+    const ddOther = new foundry.applications.ux.DragDrop.implementation({
       dragSelector: '.hit.other',
       permissions: {
         dragstart: () => true,
@@ -204,26 +208,97 @@ class Search {
   }
 
   static _createContextMenu() {
+    // World pack entry context menu options
     SEARCHABLE_WORLD_PACKS.forEach((p) => {
-      ContextMenu.create(
-        {
-          // Faking an app here to return an empty array for v11 compatibility
-          constructor: {
-            _getInheritanceChain: () => {
-              return [];
-            },
-          },
-        },
-        this.documentSearch,
+      foundry.applications.ux.ContextMenu.implementation.create(
+        {},
+        this.documentSearch[0],
         `[data-document-name="${game[p.pack].documentName}"]`,
-        ui[p.pack]._getEntryContextOptions()
+        ui[p.pack]._getEntryContextOptions(),
+        { jQuery: false }
       );
     });
+
+    // Game pack entry context menu options
+    foundry.applications.ux.ContextMenu.implementation.create(
+      {},
+      this.documentSearch[0],
+      `[data-apack]`,
+      this.getGamePackEntryContextOptions(),
+      { jQuery: false }
+    );
+  }
+
+  static getGamePackEntryContextOptions() {
+    return [
+      {
+        name: 'COMPENDIUM.ImportEntry',
+        icon: '<i class="fa-solid fa-download"></i>',
+        condition: (li) => {
+          const pack = game.packs.get(li.dataset.apack);
+          return pack.documentName !== 'Adventure' && pack.documentClass.canUserCreate(game.user);
+        },
+        callback: (li) => {
+          const pack = game.packs.get(li.dataset.apack);
+          const collection = game.collections.get(pack.documentName);
+          return collection.importFromCompendium(
+            pack,
+            foundry.utils.parseUuid(li.dataset.uuid).id,
+            {},
+            { renderSheet: true }
+          );
+        },
+      },
+      {
+        name: 'ADVENTURE.ExportEdit',
+        icon: '<i class="fa-solid fa-pen-to-square"></i>',
+        condition: (li) => {
+          const pack = game.packs.get(li.dataset.apack);
+          return pack.documentName === 'Adventure' && game.user.isGM && !pack.collection.locked;
+        },
+        callback: async (li) => {
+          const document = await foundry.utils.fromUuid(li.dataset.uuid);
+          return new CONFIG.Adventure.exporterClass({
+            document: document.clone({}, { keepId: true }),
+          }).render({ force: true });
+        },
+      },
+      {
+        name: 'SCENE.GenerateThumb',
+        icon: '<i class="fa-solid fa-image"></i>',
+        condition: (li) => {
+          const pack = game.packs.get(li.dataset.apack);
+          return !pack.locked && pack.documentName === 'Scene';
+        },
+        callback: async (li) => {
+          const scene = await foundry.utils.fromUuid(li.dataset.uuid);
+
+          try {
+            const { thumb } = (await scene?.createThumbnail()) ?? {};
+            if (thumb) await scene.update({ thumb }, { diff: false });
+            ui.notifications.info('SCENE.GenerateThumbSuccess', { format: { name: scene.name } });
+          } catch (err) {
+            ui.notifications.error(err.message);
+          }
+        },
+      },
+      {
+        name: 'COMPENDIUM.DeleteEntry',
+        icon: '<i class="fa-solid fa-trash"></i>',
+        condition: (li) => {
+          return game.user.isGM && !game.packs.get(li.dataset.apack).locked;
+        },
+        callback: async (li) => {
+          const document = await foundry.utils.fromUuid(li.dataset.uuid);
+          return document?.deleteDialog();
+        },
+      },
+    ];
   }
 }
 
 Hooks.on('renderCompendiumDirectory', async (compendiumDirectory, html, options) => {
-  Search.init(html);
+  Search.init($(html));
 });
 
 Hooks.on('init', () => {
